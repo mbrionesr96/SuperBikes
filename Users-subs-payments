@@ -1,0 +1,29 @@
+create table Subscriptions(
+  sub_id INT PRIMARY KEY NOT NULL,
+  type VARCHAR(50),
+  date TIMESTAMP,
+  price DECIMAL (10,2) NOT NULL
+);
+
+create table Payments(
+  payments_id INT PRIMARY KEY NOT NULL,
+  method VARCHAR(50),
+  date TIMESTAMP
+);
+
+
+create table Users(
+  user_id INT PRIMARY KEY NOT NULL,
+  name VARCHAR(50),
+  surname VARCHAR(50),
+  sub_id INT NOT NULL,
+  payments_id INT NOT NULL,
+    CONSTRAINT fk_subscriptions
+    FOREIGN KEY (sub_id)
+    REFERENCES Subscriptions(sub_id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_payments
+    FOREIGN KEY (payments_id)
+    REFERENCES Payments(payments_id)
+    ON DELETE CASCADE
+);

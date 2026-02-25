@@ -1,0 +1,74 @@
+reate table Users(
+  User_ID INT primary key,
+  First_Name varchar(50) NOT null,
+  Last_Name varchar(50) Not null,
+  Email_ID varchar(100) unique NOT NULL,
+  DOB DATE NOT NULL,
+  Reg_Date DATE
+);
+
+create table Stations(
+  Station_ID INT PRIMARY KEY,
+  Station_Name varchar(50) NOT null unique,
+  Capacity int not null
+);
+
+create table Bikes(
+  Bike_ID INT PRIMARY KEY,
+  Bike_Type varchar(20),
+  Status text check (Status in ('Docked','In use','Under Maintenance')),
+  Current_Station_ID int,
+  Battery_level float,
+  Purchase_Date DATE,
+  CHECK (Battery_level>=20),
+  constraint fk_current_station_id foreign key (Current_Station_ID) references Stations(Station_ID)
+);
+
+create table Rides(
+  Ride_ID INT PRIMARY KEY,
+  User_ID int references Users(User_id),
+  Bike_id int references Bikes(Bike_ID),
+  Start_Station int references Stations(Station_ID),
+  End_station int references Stations(Station_ID),
+  Start_Time TIME NOT null,
+  End_Time TIME NOT NULL,
+  Ride_Cost float NOT NULL,
+  Ride_Status text check (Ride_Status in ('Ongoing','Completed')) NOT NULL,
+  Ride_Dist_km FLOAT NOT NULL
+);
+
+create table Maintenances(
+  Maint_ID INT PRIMARY KEY,
+  Bike_ID INT references Bikes(Bike_ID),
+  Issue text,
+  Reported_Date DATE NOT NULL,
+  Fixed_Date DATE NOT NULL,
+  Status text check (Status in ('Ongoing','Done'))
+);
+
+create table Subscriptions(
+  Sub_ID INT PRIMARY KEY,
+  User_ID int references Users(User_ID),
+  Sub_type text check (Sub_type in ('Monthly','Yearly','Quarterly')),
+  Start_Date DATE NOT NULL,
+  End_Date DATE
+);
+
+create TABLE Payments(
+  Payment_ID INT PRIMARY KEY,
+  User_ID int references Users(User_ID),
+  Ride_ID int references Rides(Ride_ID),
+  Amount FLOAT NOT NULL,
+  Payment_Date DATE NOT NULL,
+  Payment_Status text check (Payment_Status in ('Success','Failed'))
+);
+
+ALTER table Bikes
+ALTER column Bike_Type TYPE text;
+
+ALTER TABLE Bikes
+  ALTER COLUMN Bike_Type SET NOT NULL;
+
+ALTER TABLE Bikes
+  ADD CONSTRAINT bikes_bike_type_check
+  CHECK (Bike_Type IN ('Manual', 'Electric'));

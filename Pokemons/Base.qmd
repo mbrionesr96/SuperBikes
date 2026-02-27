@@ -1,0 +1,239 @@
+---
+title: "Who's that pokemon?"
+author: 
+  - Maria Briones
+  - Riccardo Dondi
+  - Sayatan Mandal
+format:
+  html:
+    code-fold: true
+    theme: sketchy
+    toc: true
+execute:
+  echo: true #to include the chunks on the final document
+  warning: false
+---
+# Fancy introduction
+
+Here goes a fancy introduction to our problem and the data we are using. We can also add some images, like the one of "Who's that pokemon?"
+
+## Data loading and cleaning
+
+First we need to get our R enviroment ready and load the data. We will be using the tidytuesdayR package to load the data, which is a great resource for finding interesting datasets to work with.
+
+```{r}
+#| label: set-up
+
+#load pacman library to load all the libraries and install if needed
+library(pacman)
+
+# Load libraries
+p_load(tidyverse, #for data manipulation
+        ggplot2, #for plotting
+        tidytuesdayR, #to load the data
+        forcats, #for factor manipulation
+        farver #for color manipulation
+        )
+
+# if we wanted to set a different working directory
+# mainwd <- "C:/Users/marub/Desktop/DataSci for Management/Statistics with R/Data Visualization" 
+```
+With our environment ready we import the data and do some cleaning. We will be using the pokemon dataset, which contains information about all the pokemon from the first generation to the seventh generation.
+
+```{r}
+#| label: data-import
+
+# import data pokemon from tidytuesdayR
+pokemon_df <- tt_load(2025, week = 13)$pokemon_df
+
+pokemon_df |> glimpse()
+```
+
+As we can see our databse contains information about `{r} nrow(pokemon_df)` pokemons studied on `{r} ncol(pokemon_df)` variables. Not all of these features contain valuable information for our analysis, so we will be selecting only the ones that we think are relevant: 
+
+* id: the id of the pokemon
+* pokemon: the name of the pokemon
+* height: the height of the pokemon in meters
+* weight: the weight of the pokemon in kilograms
+* base_experience: the base experience of the pokemon when catched
+* type_1: the primary type of the pokemon
+* type_2: the secondary type of the pokemon (if it has one)
+* hp: the health points of the pokemon
+* attack: the attack points of the pokemon
+* defense: the defense points of the pokemon
+* special_attack: the special attack points of the pokemon
+* special_defense: the special defense points of the pokemon
+* speed: the speed points of the pokemon
+* generation_id: the generation on wich the pokemon was introduced
+
+<!-- Maybe drop color and egg variables too if we don't use them at the end-->
+```{r}
+#| label: data-cleaning
+
+# drop columns that we don't need
+pokemon_df <- pokemon_df |>
+  select(-c(species_id, url_icon, url_image))
+```
+
+One of the first things we notice is that there are some missing values on the generation_id variable (exactly FILL). After some research on this subset we were able to determine that these pokemons are all spetial edition pokemons like Charizard Mega X or Pikachu Pop Star. In consequence we will be dropping these pokemons from our analysis, since they are not representative of the general pokemon population and they could mislead our insights.
+
+```{r}
+#| label: data-cleaning-2
+
+# drop pokemons with missing generation_id
+pokemon_df = pokemon_df |> 
+  filter(!is.na(generation_id))
+```
+
+Now we have a clean dataset with `{r} nrow(pokemon_df)` pokemons and `{r} ncol(pokemon_df)` variables.
+
+As we will be performing some analysis on the types of pokemons it's important to get familiar with these variables. During this process we noticed that there are some pokemons that have a secondary type and some that don't (FILL over FILL`). For the ones that don't have a secondary type, the value of type_2 is NA. We will be replacing these NA values with "none" to make our analysis easier.
+
+<!-- maybe here we should print in a pretty way the 18 types of pokemons -->
+
+```{r}
+#| label: data-cleaning-3
+
+#manage NAs in type 2
+pokemon_df = pokemon_df |> 
+  mutate(type_2 = ifelse(is.na(type_2), "none", type_2))
+```
+
+# Pokemon distribution by generation 
+
+How many pokemons there are in each generation? How powerfull are they? We can answer these questions by looking at the distribution of pokemons by generation.
+
+```{r}
+#| label: pokemon-distribution
+
+# to a better analysis we create to combined variables
+pokemon_df = pokemon_df |> 
+  mutate(comb_attack = str_to_title(attack + special_attack),
+         comb_defense = str_to_title(defense + special_defense))
+
+#summarise pokemon distribution by generation and main stats
+interest_stats = pokemon_df |> 
+  group_by(generation_id) |> 
+  summarise(n = n(),
+            avg_hp = mean(hp, na.rm = TRUE),
+            avg_attack = mean(comb_attack, na.rm = TRUE),
+            avg_defense = mean(comb_defense, na.rm = TRUE),
+            avg_speed = mean(speed, na.rm = TRUE)
+)
+
+interest_stats
+```
+- blah blah about generations maybe we can choose some on wich to focus our analysis on
+
+```{r}
+#| label: pokemon focus
+#| include: false
+#| echo: false
+#| eval: false
+
+poke_focus = pokemon_df |> 
+  filter(generation_id %in% c(1, 3, 5))
+
+interest_stats = poke_focus |> 
+  group_by(type_1) |> 
+  summarise(n = n(),
+            avg_attack = mean(attack, na.rm = TRUE),
+            avg_defense = mean(defense, na.rm = TRUE),
+            avg_speed = mean(speed, na.rm = TRUE),
+            avg_sp_attack = mean(special_attack, na.rm = TRUE),
+            avg_sp_defense = mean(special_defense, na.rm = TRUE)
+)
+```
+
+# What can we say about types
+
+Pokemons come on a wide variety of types, each with its own strengths and weaknesses. We can analyze the distribution of pokemons by type to see which types are more common and which are more powerful.
+
+<!-- Here maybe add a picture of pokemon types stregths and weaknesses -->
+
+```{r}
+#| label: type-distribution
+
+#table for count of pokemon by type and generation 
+pokemon_df |> 
+  group_by(generation_id, type_1) |> 
+  summarise(n = n()) |> 
+  pivot_wider(names_from = generation_id, values_from = n, values_fill = 0)
+```
+
+## Type proportion on our sample
+
+Fancy improvable heatmap of the proportion of pokemons by type 1 and type 2. The most common primary types are water, normal and flying. We can also see that the most common secondary type is "none", which means that most pokemon don't have a secondary type.
+
+```{r}
+#| label: type-heatmap
+
+# count of pokemon by type 1 and type 2
+poke_type <- pokemon_df|> 
+  group_by(type_1, type_2) |> 
+  summarise(n = n(), .groups = "drop") |>
+  complete(type_1, type_2, fill = list(n = 0)) |>
+  ungroup() |> 
+  mutate(prop = n * 100 / sum(n))
+
+poke_type <- poke_type |>
+  mutate(
+    type_2 = fct_relevel(type_2, "None")
+  )
+
+#graph 
+ggplot(poke_type, aes(x = type_2, y = type_1, fill = prop)) +
+  geom_tile(color = "lightgrey") +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(
+    x = "Type 2",
+    y = "Type 1",
+    fill = "Proportion"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## Distribution of stats by type
+
+Fancy improvable bar/line plot of the proportion.
+
+We can also analyze the distribution of stats by type to see which types are more powerful. We can see that the most powerful types are....
+
+```{r}
+#| label: type-stats
+
+#new interest stats by type
+interest_stats_type = pokemon_df |> 
+  group_by(type_1) |> 
+  summarise(n = n(),
+            avg_hp = mean(hp, na.rm = TRUE),
+            avg_attack = mean(comb_attack, na.rm = TRUE),
+            avg_defense = mean(comb_defense, na.rm = TRUE),
+            avg_speed = mean(speed, na.rm = TRUE)
+)
+
+# apply focus on the types that have more than 20 pokemons
+ finterest_stats = interest_stats_type |> 
+  filter(n > 20) |> 
+   pivot_longer(cols = -type_1, names_to = "stat", values_to = "value")
+
+#grouped bar graph for stats by type
+ggplot(data=finterest_stats, aes(x=type_1, y=value, fill=stat)) +
+geom_bar(stat="identity", position=position_dodge())
+
+```
+
+# Conclusion 
+
+very fancy analysis an all but we still beting on Pikachu.
+
+```{r}
+#| label: total-clean
+#| echo: false
+#| include: false
+#| warning: false
+
+rm(list = ls()[ls() != c("colorize", "datawd")])
+gc()
+```

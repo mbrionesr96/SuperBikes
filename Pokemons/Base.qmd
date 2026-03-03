@@ -7,19 +7,26 @@ author:
 format:
   html:
     code-fold: true
-    theme: sketchy
+    theme: Brite
     toc: true
 execute:
   echo: true #to include the chunks on the final document
   warning: false
 ---
-# Fancy introduction
 
-Here goes a fancy introduction to our problem and the data we are using. We can also add some images, like the one of "Who's that pokemon?"
+# Our mission: catch them all
+
+A very common issue to every parent is how to advice their 10-year-old child when the kid is about to leave on a world-wide trip. There are many important questions to be adressed before the trip, like "How many pokemons there are?", "Who is the strongest?" "How do I catch them all?".
+
+On this document we try to provide some insights on the pokemon world to help parents to advice their children on how to catch them all. We will be using the pokemon dataset from the [tidytuesday repository](https://github.com/rfordatascience/tidytuesday/tree/main), which contains information about all the pokemons from the first generation to the seventh generation.
+
+<p align="center">
+![](whos.png)
+</p>
 
 ## Data loading and cleaning
 
-First we need to get our R enviroment ready and load the data. We will be using the tidytuesdayR package to load the data, which is a great resource for finding interesting datasets to work with.
+First we need to get our R enviroment ready and load the data. We will be using the `tidytuesdayR` package to load the data, which is a great resource for finding interesting datasets to work with.
 
 ```{r}
 #| label: set-up
@@ -32,24 +39,34 @@ p_load(tidyverse, #for data manipulation
         ggplot2, #for plotting
         tidytuesdayR, #to load the data
         forcats, #for factor manipulation
-        farver #for color manipulation
+        farver, #for color manipulation
+        knitr, #for appealing tables
+        kableExtra, #for appealing tables
+        skimr, #for data exploration
+        viridisLite #for color palette
         )
 
 # if we wanted to set a different working directory
 # mainwd <- "C:/Users/marub/Desktop/DataSci for Management/Statistics with R/Data Visualization" 
 ```
-With our environment ready we import the data and do some cleaning. We will be using the pokemon dataset, which contains information about all the pokemon from the first generation to the seventh generation.
+
+With our environment ready we import the data and do some cleaning. We will be using the [Pokemon](https://github.com/rfordatascience/tidytuesday/blob/main/data/2025/2025-04-01/readme.md) dataset, which contains information about all the pokemon from the first generation to the seventh generation.
 
 ```{r}
 #| label: data-import
 
 # import data pokemon from tidytuesdayR
 pokemon_df <- tt_load(2025, week = 13)$pokemon_df
-
-pokemon_df |> glimpse()
 ```
 
-As we can see our databse contains information about `{r} nrow(pokemon_df)` pokemons studied on `{r} ncol(pokemon_df)` variables. Not all of these features contain valuable information for our analysis, so we will be selecting only the ones that we think are relevant: 
+Our databse contains information about `{r} nrow(pokemon_df)` pokemons studied on `{r} ncol(pokemon_df)` variables, both numerical and categorical. 
+
+```{r}
+#| label: first-data-exploration
+pokemon_df |> skim()
+```
+
+Not all of these features contain valuable information for our analysis, so we will be selecting only the ones that we think are relevant: 
 
 * id: the id of the pokemon
 * pokemon: the name of the pokemon
@@ -67,6 +84,7 @@ As we can see our databse contains information about `{r} nrow(pokemon_df)` poke
 * generation_id: the generation on wich the pokemon was introduced
 
 <!-- Maybe drop color and egg variables too if we don't use them at the end-->
+
 ```{r}
 #| label: data-cleaning
 
@@ -75,7 +93,7 @@ pokemon_df <- pokemon_df |>
   select(-c(species_id, url_icon, url_image))
 ```
 
-One of the first things we notice is that there are some missing values on the generation_id variable (exactly FILL). After some research on this subset we were able to determine that these pokemons are all spetial edition pokemons like Charizard Mega X or Pikachu Pop Star. In consequence we will be dropping these pokemons from our analysis, since they are not representative of the general pokemon population and they could mislead our insights.
+One of the first things we notice is that there are some missing values (NA) on the generation_id variable (exactly `{r} pokemon_df$generation_id |> is.na() |> sum()`). After some research on this subset we were able to determine that these pokemons are all spetial edition pokemons like Charizard Mega X or Pikachu Pop Star. In consequence we will be dropping these pokemons from our analysis, since they are not representative of the general pokemon population and they could mislead our insights.
 
 ```{r}
 #| label: data-cleaning-2
@@ -85,32 +103,36 @@ pokemon_df = pokemon_df |>
   filter(!is.na(generation_id))
 ```
 
+<p style="max-width: 35%; float: right;">
+![](types.png)
+</p>
+
 Now we have a clean dataset with `{r} nrow(pokemon_df)` pokemons and `{r} ncol(pokemon_df)` variables.
 
-As we will be performing some analysis on the types of pokemons it's important to get familiar with these variables. During this process we noticed that there are some pokemons that have a secondary type and some that don't (FILL over FILL`). For the ones that don't have a secondary type, the value of type_2 is NA. We will be replacing these NA values with "none" to make our analysis easier.
-
-<!-- maybe here we should print in a pretty way the 18 types of pokemons -->
+As we will be performing some analysis on the types of pokemons it's important to get familiar with these variables. During this process we noticed that there are some pokemons that have a secondary type and some that don't (`{r} pokemon_df$type_2 |> is.na() |> sum()` over `{r} pokemon_df  |> nrow()`). For the ones that don't have a secondary type, the value of type_2 is NA. We will be replacing these NA values with "none" to make our analysis easier.
 
 ```{r}
 #| label: data-cleaning-3
 
 #manage NAs in type 2
 pokemon_df = pokemon_df |> 
-  mutate(type_2 = ifelse(is.na(type_2), "none", type_2))
+  mutate(pokemon = str_to_title(pokemon), #gives some format to Pokemon names.
+         type_2 = ifelse(is.na(type_2), "none", type_2) |> str_to_title(),
+         type_1 = str_to_title(type_1))
 ```
 
 # Pokemon distribution by generation 
 
-How many pokemons there are in each generation? How powerfull are they? We can answer these questions by looking at the distribution of pokemons by generation.
+Now is time to adress some of our questions: How many pokemons there are in each generation? How powerfull are they? We can get some ideas about these topics by looking at the distribution of pokemons.
 
 ```{r}
 #| label: pokemon-distribution
 
 # to a better analysis we create to combined variables
 pokemon_df = pokemon_df |> 
-  mutate(comb_attack = str_to_title(attack + special_attack),
-         comb_defense = str_to_title(defense + special_defense))
-
+  mutate(comb_attack = attack + special_attack,
+         comb_defense = defense + special_defense)
+         
 #summarise pokemon distribution by generation and main stats
 interest_stats = pokemon_df |> 
   group_by(generation_id) |> 
@@ -120,10 +142,45 @@ interest_stats = pokemon_df |>
             avg_defense = mean(comb_defense, na.rm = TRUE),
             avg_speed = mean(speed, na.rm = TRUE)
 )
-
-interest_stats
 ```
-- blah blah about generations maybe we can choose some on wich to focus our analysis on
+
+```{r}
+#| label: tbl-poke_distribution
+#| echo: false
+#| tbl-cap: "Pokemon stats by generation"
+
+# Identify generations with the highest number of pokemons
+top_gen <- rank(-interest_stats$n) <= 3
+
+#identify the top generation on each stat
+top_hp <- rank(-interest_stats$avg_hp) <= 3
+top_attack <- rank(-interest_stats$avg_attack) <= 3
+top_defense <- rank(-interest_stats$avg_defense) <= 3
+top_speed <- rank(-interest_stats$avg_speed) <= 3
+
+turbo=turbo(n=3, begin= 0.8, end=0.99, direction = 1) #3 color from turbo palette
+
+# Create background color vector (only for top 3)
+gen_colors <- ifelse(top_gen, spec_color(interest_stats$n, end = 0.5), "transparent") #default viridis
+hp_colors <- ifelse(top_hp, spec_color(interest_stats$avg_hp, palette=turbo), "black")
+at_colors <- ifelse(top_attack, spec_color(interest_stats$avg_attack, palette=turbo),"black")
+def_colors <- ifelse(top_defense, spec_color(interest_stats$avg_defense, palette=turbo),"black")
+sp_colors <- ifelse(top_speed, spec_color(interest_stats$avg_speed, palette=turbo),"black")
+
+interest_stats |>
+  kable(digits = 2) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+                full_width = F, position = "center") |> #some styling options for the table
+  column_spec(2, background = gen_colors) |> #backwround color for 2 column (number of pokemons)
+  column_spec(3, color = hp_colors, bold = top_hp) |> #color and bold for hp column
+  column_spec(4, color = at_colors, bold = top_attack) |> 
+  column_spec(5, color = def_colors, bold = top_defense) |> 
+  column_spec(6, color = sp_colors, bold = top_speed)
+```
+
+From this we can see that the most populated generations are the 1st, 3rd and 5th. Nevertheless, the most powerfull generation considering all four stats (combined attack, combined defense, hp and speed) is the 4th generation. 
+
+<!-- Here maybe we han argument to apply a focus on some 3 generations, I leave a not entierly functional code chunk that focused on generations 1, 3 and 5 -->
 
 ```{r}
 #| label: pokemon focus
@@ -147,23 +204,32 @@ interest_stats = poke_focus |>
 
 # What can we say about types
 
-Pokemons come on a wide variety of types, each with its own strengths and weaknesses. We can analyze the distribution of pokemons by type to see which types are more common and which are more powerful.
+Pokemons come on a wide variety of types. Does it matter to pick a pokemon of a certain type? Are some types more common than others? Are some types more powerful than others? These are very important questions as we know that advantages and weaknesses of types are a key element of the pokemon world. For example, water type pokemons are strong against fire type pokemons but weak against electric type pokemons. In consequence, if we want to catch them all we need to know which types are more common and which types are more powerful.
 
-<!-- Here maybe add a picture of pokemon types stregths and weaknesses -->
+<!-- <p style="max-width: 35%; align="center">
+![](types_pro_cons.png)
+</p> -->
 
 ```{r}
-#| label: type-distribution
+#| label: tbl-type_distribution
+#| tbl-cap: "Number of Pokemons by type and generation"
 
 #table for count of pokemon by type and generation 
 pokemon_df |> 
   group_by(generation_id, type_1) |> 
   summarise(n = n()) |> 
-  pivot_wider(names_from = generation_id, values_from = n, values_fill = 0)
+  pivot_wider(names_from = generation_id, values_from = n, values_fill = 0) |> 
+  mutate(Total = rowSums(across(where(is.numeric)))) |>
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+                full_width = F, position = "center")
 ```
 
 ## Type proportion on our sample
 
-Fancy improvable heatmap of the proportion of pokemons by type 1 and type 2. The most common primary types are water, normal and flying. We can also see that the most common secondary type is "none", which means that most pokemon don't have a secondary type.
+From table @tbl-type_distribution we can see that the most common types are water, normal and Grass. However, these types are not equally distributed across generations. For example, the water type is more common in the 1st generation than in the 4th generation and Normal type is the rarest main type on the 6th generation. 
+
+The analysis can be enriched if we consider the secondary type of pokemons. Considerin the 18 main types and the 19 secondary types (including "None") there are 342 possible combinations we can create a heatmap to visualize the proportion of pokemons by type 1 and type 2 across the total universe of registered pokemons. This will allow us to see which combinations of types are more common and which are more rare.
 
 ```{r}
 #| label: type-heatmap
@@ -174,25 +240,30 @@ poke_type <- pokemon_df|>
   summarise(n = n(), .groups = "drop") |>
   complete(type_1, type_2, fill = list(n = 0)) |>
   ungroup() |> 
-  mutate(prop = n * 100 / sum(n))
+  mutate(prop = n * 100 / sum(n), 
+         norm_prop = case_when (prop==0 ~ -2.1,
+                                TRUE ~ log(prop))
+        )
 
 poke_type <- poke_type |>
-  mutate(
-    type_2 = fct_relevel(type_2, "None")
-  )
+  mutate(type_2 = fct_relevel(type_2, "None")) #we make it a factor so "None" appears first
 
 #graph 
-ggplot(poke_type, aes(x = type_2, y = type_1, fill = prop)) +
+ggplot(poke_type, aes(x = type_2, y = type_1, fill = norm_prop)) +
   geom_tile(color = "lightgrey") +
-  scale_fill_gradient(low = "white", high = "red") +
+  scale_fill_gradient(low = "white", high = "#B22222") +
   labs(
-    x = "Type 2",
-    y = "Type 1",
-    fill = "Proportion"
+    title = "Normalized proportion of pokemons by types",
+    x = "Secondary Type",
+    y = "Main Type",
+    fill = "Norm. Prop.",
+    caption = "Normalization is performed as ln(proportion) to better visualize types with low proportions."
   ) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+
+Assuming that each pokemon species distributed homogeneously across the world, meaning that for example catching a Blastoise is as likely as catching a Squirtle (strong assumption), we could say that the most abuntant pokemons belong to the Water-None combination. Outside the None secondary type, the most common combinations are Normal-Flying (like Pidgey), Grass-Poison (like Bulbasaur) and Bug-Flying (like Butterfree). On the other hand, there are 42 combinations that have only one pokemon species, like the Ghost-Fairy, Fire-Dark, or Dragon-Electric.
 
 ## Distribution of stats by type
 

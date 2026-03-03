@@ -1,0 +1,22 @@
+-- user table population
+INSERT INTO users (user_id, first_name, last_name, email_id, reg_date) VALUES
+(1, 'Luca', 'Rossi', 'luca.rossi@gmail.com', '2019-03-12'),
+(2, 'Giulia', 'Bianchi', 'giulia.bianchi@yahoo.com', '2020-11-05'),
+(3, 'Marco', 'Verdi', 'marco.verdi@outlook.com', '2021-07-18'),
+(4, 'Sara', 'Romano', 'sara.romano@gmail.com', '2022-01-22'),
+(5, 'Alessandro', 'Galli', 'alessandro.galli@icloud.com', '2020-04-09'),
+(6, 'Chiara', 'Fontana', 'chiara.fontana@libero.it', '2023-06-14'),
+(7, 'Matteo', 'Colombo', 'matteo.colombo@gmail.com', '2019-10-01'),
+(8, 'Francesca', 'Moretti', 'francesca.moretti@yahoo.com', '2021-02-27'),
+(9, 'Davide', 'Ferrari', 'davide.ferrari@outlook.com', '2022-08-03'),
+(10, 'Elena', 'Marini', 'elena.marini@gmail.com', '2024-01-19'),
+(11, 'Simone', 'Riva', 'simone.riva@icloud.com', '2020-09-02'),
+(12, 'Valentina', 'Serra', 'valentina.serra@libero.it', '2023-03-21'),
+(13, 'Federico', 'Testa', 'federico.testa@gmail.com', '2019-12-05'),
+(14, 'Martina', 'Greco', 'martina.greco@yahoo.com', '2022-10-18'),
+(15, 'Andrea', 'Pellegrini', 'andrea.pellegrini@outlook.com', '2021-05-01'),
+(16, 'Ilaria', 'Costa', 'ilaria.costa@gmail.com', '2023-11-16'),
+(17, 'Giorgio', 'Sartori', 'giorgio.sartori@icloud.com', '2020-02-03'),
+(18, 'Sayantan', 'Mandal', 'sayantan.mandal@outlook.com', '2023-11-02'),
+(19, 'Riccardo', 'Dondi', 'riccardo.dondi@hotmail.com', '2021-09-27'),
+(20, 'Maria', 'Briones Rodriguez', 'maria.briones@icloud.com', '2024-03-01');

@@ -1,0 +1,22 @@
+-- maintenances table population
+INSERT INTO maintenances (maint_id, bike_id, issue, reported_date, fixed_date, maint_status) VALUES
+(1, 8,  'Battery failure - unable to hold charge','2026-02-10', NULL, 'ongoing'),
+(2, 31, 'Motor controller malfunction – error code E07','2026-02-14', NULL, 'ongoing'),
+(3, 53, 'Severe battery degradation – requires replacement','2026-02-18', NULL, 'ongoing'),
+(4, 4,  'Brake pads worn out – replaced','2025-11-05', '2025-11-06', 'done'),
+(5, 12, 'Rear wheel alignment issue – adjusted', '2025-12-12', '2025-12-13', 'done'),
+(6, 19, 'Motor overheating – firmware updated','2025-10-20', '2025-10-22', 'done'),
+(7, 25, 'Chain replacement due to rust','2025-09-15', '2025-09-16', 'done'),
+(8, 34, 'Seat post cracked - replaced','2025-08-02', '2025-08-03', 'done'),
+(9, 48, 'Front light not working – wiring fixed','2025-07-10', '2025-07-11', 'done'),
+(10, 61,'Gear shifting malfunction – derailleur tuned','2025-06-18', '2025-06-19', 'done'),
+(11, 2,  'Front brake cable stretched – adjusted','2025-05-11', '2025-05-11', 'done'),
+(12, 7,  'Tire puncture – inner tube replaced','2025-04-03', '2025-04-03', 'done'),
+(13, 10, 'Loose crank arm – tightened','2025-03-22', '2025-03-22', 'done'),
+(14, 14, 'Handlebar misalignment – corrected','2025-03-18', '2025-03-18', 'done'),
+(15, 22, 'Rear mudguard broken – replaced','2025-02-27', '2025-02-28', 'done'),
+(16, 25, 'Chain lubrication and cleaning','2025-02-10', '2025-02-10', 'done'),
+(17, 34, 'Seat clamp loose – tightened','2025-01-22', '2025-01-22', 'done'),
+(18, 48, 'Rear light intermittent – connector replaced','2024-12-14', '2024-12-15', 'done'),
+(19, 55, 'Front wheel wobble – trued and balanced','2024-11-20', '2024-11-21', 'done'),
+(20, 61, 'Pedal bearing noise – bearings replaced','2024-11-09', '2024-11-10', 'done');

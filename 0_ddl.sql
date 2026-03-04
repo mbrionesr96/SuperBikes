@@ -34,8 +34,8 @@ CREATE TABLE rides(
   bike_id INT, --N-1 to bikes
   from_station INT REFERENCES stations(station_id), --1-N to stations
   to_station INT REFERENCES stations(station_id), --1-N to stations
-  start_time TIME NOT NULL,
-  end_time TIME,
+  start_time TIMESTAMP NOT NULL,
+  end_time TIMESTAMP,
   ride_cost FLOAT CHECK (ride_cost >= 0),
   ride_status TEXT CHECK (ride_status IN ('ongoing','completed')) NOT NULL,
   ride_dist_km FLOAT,

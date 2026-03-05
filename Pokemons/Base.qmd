@@ -14,7 +14,7 @@ execute:
   warning: false
 ---
 
-# Our mission: catch them all
+# Our mission: catch them all!
 
 A very common issue to every parent is how to advice their 10-year-old child when the kid is about to leave on a world-wide trip. There are many important questions to be adressed before the trip, like "How many pokemons there are?", "Who is the strongest?" "How do I catch them all?".
 

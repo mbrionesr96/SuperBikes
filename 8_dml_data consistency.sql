@@ -28,19 +28,3 @@ SELECT COUNT(*) as nr_lb_bikes
 SELECT 
     (SELECT COUNT(*) FROM payments) AS payments_count,
     (SELECT COUNT(*) FROM subscriptions) AS subscriptions_count;
-
---distribution of subscriptions
-SELECT 
-    TO_CHAR(DATE_TRUNC('month', begining_date), 'YYYY-MM') AS month,
-    SUM(cost) AS total_cost
-FROM subscriptions
-GROUP BY month
-ORDER BY month;
-
---distribution of payments
-SELECT 
-    TO_CHAR(DATE_TRUNC('month', payment_date), 'YYYY-MM') AS month,
-    SUM(amount) AS total_amount
-FROM payments
-GROUP BY month
-ORDER BY month;

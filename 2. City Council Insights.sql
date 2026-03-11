@@ -23,7 +23,7 @@ SELECT
     'pay as-you-go' AS subscription_type,
     SUM(amount) AS total_income
 FROM payments
-WHERE ride_id > 0 --This is were our data migh get redundant as many rows on payments do not correspond to rides but to subscriptions
+WHERE ride_id > 0 
 GROUP BY month
 ORDER BY month, subscription_type;
 

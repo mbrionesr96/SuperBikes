@@ -1,4 +1,3 @@
--- cleaner DDL
 CREATE TABLE users( --1-N to payments; 1-N to subscriptions; 1-N to rides
   user_id INT PRIMARY KEY,
   first_name VARCHAR(50) NOT NULL,
@@ -22,8 +21,6 @@ CREATE TABLE bikes( --1-N to rides;  N-1 to stations; 1-N to maintenances
   -- Battery logic depending on bike type
   CHECK ((bike_type = 'manual' AND battery_level IS NULL) OR
          (bike_type = 'electric' AND battery_level BETWEEN 0 AND 100)),
-  -- Maintenance rule
-  CHECK(battery_level > 20 OR bike_status = 'under maintenance'),
   CONSTRAINT fk_current_station_id FOREIGN KEY (current_station_id) REFERENCES stations(station_id)--definition of FK 
   ON DELETE CASCADE 
 );
@@ -60,7 +57,7 @@ CREATE TABLE subscriptions(
   user_id INT, --N-1 to users,
   cost NUMERIC (6,2) NOT NULL, 
   sub_type TEXT CHECK (sub_type IN ('monthly','yearly','quarterly')),
-  begining_date DATE NOT NULL, 
+  beginning_date DATE NOT NULL, 
   end_date DATE,
   FOREIGN KEY (user_id) REFERENCES users(user_id) --definition of FK
   ON DELETE CASCADE 

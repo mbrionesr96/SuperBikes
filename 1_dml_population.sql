@@ -98,7 +98,7 @@ INSERT INTO bikes (bike_id, bike_type, bike_status, current_station_id, battery_
 (58,'electric','docked',5,93),
 (59,'electric','docked',5,67),
 (60,'electric','in use',NULL,82),
-(61,'electric','docked',6,96),
+(61,'electric','docked',3,15),
 (62,'electric','docked',6,75),
 (63,'electric','in use',NULL,89),
 (64,'electric','docked',7,84),
@@ -190,7 +190,23 @@ INSERT INTO rides (ride_id, user_id, bike_id, from_station, to_station, start_ti
 (77, 15, 43, 1, NULL, '2024-06-27 19:00', NULL, NULL, 'ongoing', NULL),
 (78, 16, 48, 10, NULL, '2024-06-28 19:10', NULL, NULL, 'ongoing', NULL),
 (79, 18, 54, 11, NULL, '2024-06-29 19:20', NULL, NULL, 'ongoing', NULL),
-(80, 19, 61, 8, NULL, '2024-06-30 19:30', NULL, NULL, 'ongoing', NULL);
+(80, 19, 61, 8, NULL, '2024-06-30 19:30', NULL, NULL, 'ongoing', NULL),
+
+(81, 2, 3, 1, 7, '2024-04-03 18:00', '2024-04-03 18:42', 3.20, 'completed', 2.6), -- CHECK DAYS
+(82, 2, 9, 7, 14, '2024-03-05 18:10', '2024-03-05 19:10', 6.40, 'completed', 5.2),
+(83, 6, 14, 12, 15, '2024-04-23 18:20', '2024-04-23 18:54', 3.50, 'completed', 3.1),
+(84, 8, 18, 6, 3, '2024-01-10 18:30', '2024-01-10 19:10', 4.10, 'completed', 4.1),
+(85, 9, 25, 14, 12, '2024-01-12 18:40', '2024-01-12 19:20', 4.80, 'completed', 3.6),
+(86, 12, 34, 13, 6, '2024-02-15 18:50', '2024-02-15 20:30', 14.30, 'completed', 8.3),
+(87, 15, 43, 1, 3, '2024-01-18 19:00', '2024-01-18 19:10', 2.90, 'completed', 1.4),
+(88, 16, 48, 10, 15, '2024-04-20 19:10', '2024-04-20 19:17', 2.70, 'completed', 1.4),
+(89, 18, 54, 11, 1, '2024-01-22 19:20', '2024-01-22 19:55', 3.70, 'completed', 1.9),
+(90, 19, 61, 8, 2, '2024-04-25 19:30', '2024-04-25 20:00', 3.90, 'completed', 2.1),
+
+(91, 1, 3, 11, 9, '2024-01-28 18:00', '2024-01-28 18:46', 3.50, 'completed', 3.0),
+(92, 5, 9, 7, 5, '2024-03-01 18:10', '2024-03-01 19:26', 5.70, 'completed', 4.9),
+(93, 6, 14, 13, 1, '2024-01-05 18:20', '2024-01-05 18:50', 3.70, 'completed', 2.4),
+(94, 8, 18, 6, 13, '2024-03-10 18:30', '2024-03-10 19:06', 3.60, 'completed', 3.3);
 
 INSERT INTO maintenances (maint_id, bike_id, issue, reported_date, fixed_date, maint_status) VALUES
 (1, 8,  'Battery failure - unable to hold charge','2026-02-10', NULL, 'ongoing'),
@@ -214,7 +230,7 @@ INSERT INTO maintenances (maint_id, bike_id, issue, reported_date, fixed_date, m
 (19, 55, 'Front wheel wobble – trued and balanced','2024-11-20', '2024-11-21', 'done'),
 (20, 61, 'Pedal bearing noise – bearings replaced','2024-11-09', '2024-11-10', 'done');
 
-INSERT INTO subscriptions (sub_id, user_id, cost, sub_type, begining_date, end_date) VALUES
+INSERT INTO subscriptions (sub_id, user_id, cost, sub_type, beginning_date, end_date) VALUES
 (1, 12, 49.99, 'quarterly', '2024-01-01', '2024-04-01'),
 (2, 1, 19.99, 'monthly', '2024-01-02', '2024-02-02'),
 (3, 19, 149.99, 'yearly', '2024-01-05', '2025-01-05'),
@@ -290,5 +306,18 @@ INSERT INTO payments (payment_id, user_id, ride_id, amount, payment_date, paymen
 (41, 14, 21, 3.50, '2024-05-28', 'success'),
 (42, 14, 37, 3.70, '2024-06-01', 'success'),
 (43, 20, 7, 3.70, '2024-06-05', 'success'),
-(44, 20, 39, 3.60, '2024-06-10', 'success');
-
+(44, 20, 39, 3.60, '2024-06-10', 'success'),
+(45, 7, 81, 3.20, '2024-04-03', 'success'),
+(46, 7, 82, 6.40, '2024-03-05', 'success'),
+(47, 11, 83, 3.50, '2024-04-23', 'success'),
+(48, 14, 84, 4.10, '2024-01-10', 'success'),
+(49, 14, 85, 4.80, '2024-01-12', 'success'),
+(50, 14, 86, 14.30, '2024-02-15', 'success'),
+(51, 14, 87, 2.90, '2024-01-18', 'success'),
+(52, 17, 88, 2.70, '2024-04-20', 'success'),
+(53, 17, 89, 3.70, '2024-01-22', 'success'),
+(54, 20, 90, 3.90, '2024-05-25', 'success'),
+(55, 20, 91, 3.50, '2024-01-28', 'success'),
+(56, 20, 92, 5.70, '2024-03-01', 'success'),
+(57, 20, 93, 3.70, '2024-01-05', 'success'),
+(58, 20, 94, 3.60, '2024-03-10', 'success');

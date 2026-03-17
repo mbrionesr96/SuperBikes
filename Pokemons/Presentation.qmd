@@ -21,23 +21,13 @@ scrollable: true
 
 ## Our mission: catch them all!
 
-<p align="center">
-
 Our main goal is to provide some insights on the Pokémon world to help parents to advice their children on how to catch them all.
 
-![](images/727px-Pokédex_Sinnoh_Pt.webp){fig-align="center" width="50%"}
-
-The POKEDEX of Sinnoh region
+![POKEDEX of Sinnoh region](/images/727px-Pokédex_Sinnoh_Pt.webp){fig-align="center" width="45%"}
 
 ## The data
 
-<p align="center">
-
-![](poke_f.gif){fig-align="center" width="250"}
-
-</p>
-
-TOO MUCH DATA AT BEGINNING
+![](/images/poke_f.gif){fig-align="center" width="75"}
 
 -   We will be using the [Pokémon](https://github.com/rfordatascience/tidytuesday/blob/main/data/2025/2025-04-01/readme.md) dataset, which contains information about 949 pokemons on 22 variables.
 
@@ -58,9 +48,6 @@ p_load(tidyverse, #for data manipulation
         skimr, #for data exploration
         viridisLite #for color palette
         )
-
-# if we wanted to set a different working directory
-# mainwd <- "C:/Users/marub/Desktop/DataSci for Management/Statistics with R/Data Visualization" 
 ```
 
 ```{r}
@@ -70,24 +57,20 @@ p_load(tidyverse, #for data manipulation
 pokemon_df <- tt_load(2025, week = 13)$pokemon_df
 ```
 
--   DATA CLEANING : We removed Null values from generation
+-   DATA CLEANING: We removed NA values from generation as they belonged to special edition pokemons and discarded irrelevant variables like color, height and egg group, among others.
 
-## Variables {.scrollable}
+## Variables
 
 ```{r}
 #| label: data-cleaning
 
 # drop columns that we don't need and which have many NAs
 pokemon_df <- pokemon_df |>
-  select(-c(color_2, color_f, egg_group_2, species_id, url_icon, url_image))
+  select(-c(height, weight, base_experience, color_2, color_f, egg_group_2, species_id, url_icon, url_image))
 ```
 
 -   **id** and **pokemon**: the id (num) and name (chr) of the Pokémon.
--   **height**: the height of the Pokémon in meters (num).
--   **weight**: the weight of the Pokémon in kilograms (num).
--   **base_experience**: the base experience of the Pokémon when catched (num).
--   **type_1**: the primary type of the Pokémon (chr).
--   **type_2**: the secondary type of the Pokémon (if it has one) (chr).
+-   **type_1** and **type_2**: the primary and secondary type of the Pokémon (chr).
 -   **hp**: the health points of the Pokémon (num).
 -   **attack**: the attack points of the Pokémon (num).
 -   **defense**: the defense points of the Pokémon (num).
@@ -100,7 +83,7 @@ pokemon_df <- pokemon_df |>
 
 We worked mainly on 3 insights:
 
-![](pokemon-confused.gif){fig-align="center"}
+![](/images/pokemon-confused.gif){fig-align="center" width="60%"}
 
 -   **Dual-type vs Single-type** (table)
 -   **Distribution by generation** (table)
@@ -108,7 +91,7 @@ We worked mainly on 3 insights:
 
 ## Double typing
 
-![](pokemon-charjabug.gif){fig-align="center"}
+![](/images/pokemon-charjabug.gif){fig-align="center"}
 
 -   The first insight is about the typing of the pokemons. Is dual type more performant than single type?
 
@@ -134,7 +117,7 @@ pokemon_df = pokemon_df |>
 #data for dual analysis
 df <- pokemon_df |>
   mutate(
-    type_2       = na_if(type_2, "NA"),
+    type_2       = na_if(type_2, "None"),
     is_dual_type = !is.na(type_2),
     power_stats  = hp + attack + defense + special_attack + special_defense + speed
   )
@@ -152,7 +135,7 @@ dual_summary <- df |>
 dual_summary |>
   kable(
     caption = "Summary Statistics by Dual-Type Status",
-    col.names = c("Dual Type?", "Count", "Mean Power", "Median Power", "Power SD")
+    col.names = c("Is Dual?", "Count", "Mean Power", "Median Power", "Power SD")
   ) |>
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
                 full_width = FALSE)
@@ -174,7 +157,7 @@ type_dual <- df |>
 type_dual |> slice_head(n = 10) |>
   kable(
     caption = "Mean Power Stats by Primary Type and Dual-Type Status",
-    col.names = c("Primary Type", "Dual Type?", "Count", "Mean Power")
+    col.names = c("Primary Type", "Is Dual?", "Count", "Mean Power")
   ) |>
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
                 full_width = FALSE)
@@ -184,9 +167,9 @@ type_dual |> slice_head(n = 10) |>
 
 ### Outcome
 
-Dual-type Pokémon average **`r dual_summary |> filter(is_dual_type) |> pull(mean_power)`** power stats vs **`r dual_summary |> filter(!is_dual_type) |> pull(mean_power)`** for single-types — a \~37-point (9.16%) gap. Dragon dual-types lead all groups at 568 average.
+Dual-type Pokémon average **`r dual_summary |> filter(is_dual_type) |> pull(mean_power)`** power stats vs **`r dual_summary |> filter(!is_dual_type) |> pull(mean_power)`** for single-types — a \~35-point (8.56%) gap. Dragon dual-types lead all groups at 568 average.
 
-![](Dragon%20pokemons.webp){fig-align="center" width="50%"}
+![](/images/Dragon%20pokemons.webp){fig-align="center" width="50%"}
 
 ## Distribution by generation
 
@@ -221,7 +204,7 @@ interest_stats = pokemon_df |>
 ```{r}
 #| label: tbl-poke_distribution
 #| echo: false
-#| tbl-cap: "Pokemon stats by generation"
+#| tbl-cap: "Pokemon average stats by generation"
 
 # Identify generations with the highest number of pokemons
 top_gen <- rank(-interest_stats$n) <= 3
@@ -244,10 +227,11 @@ sp_colors <- ifelse(top_speed, spec_color(interest_stats$avg_speed, palette=turb
 
 
 interest_stats |>
-  kable(digits = 2) %>%
+  kable(digits = 2,
+        col.names = c("Generation", "Count", "HP", "C. Attack", "C. Defense", "Speed")) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
-                full_width = F, position = "center") |> #some styling options for the table
-  column_spec(2, background = gen_colors) |> #backwround color for 2 column (number of pokemons)
+                full_width = FALSE, position = "center") |> #some styling options for the table
+  column_spec(2, color ="black", background = gen_colors) |> #backwround color for 2 column (number of pokemons)
   column_spec(3, color = hp_colors, bold = top_hp) |> #color and bold for hp column
   column_spec(4, color = at_colors, bold = top_attack) |> 
   column_spec(5, color = def_colors, bold = top_defense) |> 
@@ -262,13 +246,11 @@ interest_stats |>
 
 -   Nevertheless, the most powerfull generation considering all four stats (combined attack, combined defense, hp and speed) is **the 4th generation**.
 
-![The starters of 4th gen](Starters_vectorial-removebg-preview.png){fig-align="center"}
+![The starters of 4th gen](/images/Starters_vectorial-removebg-preview.png){fig-align="center"}
 
 ## Vizualizations :
 
-![](poke-graph.png){fig-align="center" width="254"}
-
-THIS KIND OF VIZUALIZATION IS NOT RECOMMENDED
+![](/images/poke-graph.png){fig-align="center" width="254"}
 
 -   **Type proportion on the 7 generations** (heatmap)
 -   **Single vs Dual-type stat distributions** (violin - plot)
@@ -326,9 +308,7 @@ ggplot(poke_type, aes(x = type_2, y = type_1, fill = norm_prop)) +
 
     **Normal-Flying** (like Pidgey), **Grass-Poison** (like Bulbasaur), **Bug-Flying** (like Butterfree).
 
-![](squirtle-pokemon.gif){fig-align="center" width="230"}
-
-SQUIRTLE GANG
+![Squirtle gang](/images/squirtle-pokemon.gif){fig-align="center" width="230"}
 
 ## Single vs Dual type stats distribution
 
@@ -394,10 +374,6 @@ df |>
     legend.position = "top"
   )
 ```
-
-![](bug.gif){fig-align="center" width="471" height="279"}
-
-Some POKEMONS may EAT you CAREFUL !!
 
 ## Distribution of stats by type
 
@@ -487,10 +463,10 @@ Some battle-tested advice:
 
 The most competitive Pokémon is **Garchomp**: a Dragon-Ground dual-type from the 4th generation with a stat power of 608 points, 130 attack and 95 defense, but...
 
-![](garchomp.png){fig-align="center"}
+![](/images/garchomp.png){fig-align="center"}
 
 ------------------------------------------------------------------------
 
-At the end, our choice was, is and will always be **Pikachu**!
+At the end, our choice was, is and will always be **Pikachu ⚡**!
 
-![The best pokemon ever](Pikachu.png){fig-align="center" width="45%"}
+![The best pokemon ever](/images/Pikachu.png){fig-align="center" width="45%"}

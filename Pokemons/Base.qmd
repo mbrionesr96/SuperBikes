@@ -1,7 +1,7 @@
 ---
 title: "Who's that pokemon?"
-author: 
-  - Maria Briones
+author:
+  - Maria Briones 
   - Riccardo Dondi
   - Sayatan Mandal
 format:
@@ -9,19 +9,32 @@ format:
     code-fold: true
     theme: Brite
     toc: true
+    toc-location: left
+    toc-expand: true
+    self-contained: true
 execute:
   echo: true #to include the chunks on the final document
   warning: false
+  fig-width: 15
+  fig-height: 8
 ---
 
-# Our mission: catch them all!
+<p align="center">
+
+![](pokemon_head.jpg)
+
+</p>
+
+# Our mission: catch them all
 
 A very common issue to every parent is how to advice their 10-year-old child when the kid is about to leave on a world-wide trip. There are many important questions to be adressed before the trip, like "How many pokemons there are?", "Who is the strongest?" "How do I catch them all?".
 
 On this document we try to provide some insights on the pokemon world to help parents to advice their children on how to catch them all. We will be using the pokemon dataset from the [tidytuesday repository](https://github.com/rfordatascience/tidytuesday/tree/main), which contains information about all the pokemons from the first generation to the seventh generation.
 
 <p align="center">
-![](whos.png)
+
+![](whos.png){fig-align="center"}
+
 </p>
 
 ## Data loading and cleaning
@@ -59,39 +72,45 @@ With our environment ready we import the data and do some cleaning. We will be u
 pokemon_df <- tt_load(2025, week = 13)$pokemon_df
 ```
 
-Our databse contains information about `{r} nrow(pokemon_df)` pokemons studied on `{r} ncol(pokemon_df)` variables, both numerical and categorical. 
+Our databse contains information about `{r} nrow(pokemon_df)` pokemons studied on `{r} ncol(pokemon_df)` variables, both numerical and categorical.
 
 ```{r}
 #| label: first-data-exploration
 pokemon_df |> skim()
 ```
 
-Not all of these features contain valuable information for our analysis, so we will be selecting only the ones that we think are relevant: 
+Not all of these features contain valuable information for our analysis, so we will be selecting only the ones that we think are relevant:
 
-* id: the id of the pokemon
-* pokemon: the name of the pokemon
-* height: the height of the pokemon in meters
-* weight: the weight of the pokemon in kilograms
-* base_experience: the base experience of the pokemon when catched
-* type_1: the primary type of the pokemon
-* type_2: the secondary type of the pokemon (if it has one)
-* hp: the health points of the pokemon
-* attack: the attack points of the pokemon
-* defense: the defense points of the pokemon
-* special_attack: the special attack points of the pokemon
-* special_defense: the special defense points of the pokemon
-* speed: the speed points of the pokemon
-* generation_id: the generation on wich the pokemon was introduced
+-   id: the id of the pokemon
+-   pokemon: the name of the pokemon
+-   height: the height of the pokemon in meters
+-   weight: the weight of the pokemon in kilograms
+-   base_experience: the base experience of the pokemon when catched
+-   type_1: the primary type of the pokemon
+-   type_2: the secondary type of the pokemon (if it has one)
+-   hp: the health points of the pokemon
+-   attack: the attack points of the pokemon
+-   defense: the defense points of the pokemon
+-   special_attack: the special attack points of the pokemon
+-   special_defense: the special defense points of the pokemon
+-   speed: the speed points of the pokemon
+-   generation_id: the generation on wich the pokemon was introduced
 
 <!-- Maybe drop color and egg variables too if we don't use them at the end-->
 
 ```{r}
 #| label: data-cleaning
 
-# drop columns that we don't need
+# drop columns that we don't need and which have many NAs
 pokemon_df <- pokemon_df |>
-  select(-c(species_id, url_icon, url_image))
+  select(-c(color_2,color_f,egg_group_2,species_id, url_icon, url_image))
 ```
+
+<p align="center">
+
+![](data_clean.gif){fig-align="center"}
+
+</p>
 
 One of the first things we notice is that there are some missing values (NA) on the generation_id variable (exactly `{r} pokemon_df$generation_id |> is.na() |> sum()`). After some research on this subset we were able to determine that these pokemons are all spetial edition pokemons like Charizard Mega X or Pikachu Pop Star. In consequence we will be dropping these pokemons from our analysis, since they are not representative of the general pokemon population and they could mislead our insights.
 
@@ -103,25 +122,78 @@ pokemon_df = pokemon_df |>
   filter(!is.na(generation_id))
 ```
 
-<p style="max-width: 35%; float: right;">
-![](types.png)
+<p style="max-width: 35%; float: center;">
+
+![](types.png){fig-align="center"}
+
 </p>
 
 Now we have a clean dataset with `{r} nrow(pokemon_df)` pokemons and `{r} ncol(pokemon_df)` variables.
 
-As we will be performing some analysis on the types of pokemons it's important to get familiar with these variables. During this process we noticed that there are some pokemons that have a secondary type and some that don't (`{r} pokemon_df$type_2 |> is.na() |> sum()` over `{r} pokemon_df  |> nrow()`). For the ones that don't have a secondary type, the value of type_2 is NA. We will be replacing these NA values with "none" to make our analysis easier.
+# 3 insights on the pokemon world
 
-```{r}
-#| label: data-cleaning-3
+## 1. Dual-type vs Single-type
 
-#manage NAs in type 2
-pokemon_df = pokemon_df |> 
-  mutate(pokemon = str_to_title(pokemon), #gives some format to Pokemon names.
-         type_2 = ifelse(is.na(type_2), "none", type_2) |> str_to_title(),
-         type_1 = str_to_title(type_1))
+Dual-type Pokémon consistently outperform single-types in raw power. We engineer `is_dual_type`, then group and summarise to quantify the gap.
+
+```{r dplyr-insight-1}
+df <- pokemon_df |>
+  mutate(
+    type_2       = na_if(type_2, "NA"),
+    is_dual_type = !is.na(type_2),
+    total_stats  = hp + attack + defense + special_attack + special_defense + speed
+  )
+
+dual_summary <- df |>
+  group_by(is_dual_type) |>
+  summarise(
+    n            = n(),
+    mean_total   = round(mean(total_stats), 1),
+    median_total = round(median(total_stats), 1),
+    sd_total     = round(sd(total_stats), 1),
+    .groups = "drop"
+  )
+
+dual_summary |>
+  kable(
+    caption = "Summary Statistics by Dual-Type Status",
+    col.names = c("Dual Type?", "Count", "Mean Total", "Median Total", "SD Total")
+  ) |>
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE)
+
+# Break it down further by primary type
+type_dual <- df |>
+  group_by(type_1, is_dual_type) |>
+  summarise(
+    n          = n(),
+    mean_total = round(mean(total_stats), 1),
+    .groups    = "drop"
+  ) |>
+  filter(n >= 5) |>
+  arrange(desc(mean_total))
+
+
+type_dual |> slice_head(n = 10) |>
+  kable(
+    caption = "Mean Total Stats by Primary Type and Dual-Type Status",
+    col.names = c("Primary Type", "Dual Type?", "Count", "Mean Total")
+  ) |>
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE)
 ```
 
-# Pokemon distribution by generation 
+**Finding:** Dual-type Pokémon average **`r dual_summary |> filter(is_dual_type) |> pull(mean_total)`** total stats vs **`r dual_summary |> filter(!is_dual_type) |> pull(mean_total)`** for single-types — a \~37-point (9.16%) gap. Dragon dual-types lead all groups at 568 average.
+
+<p align="center">
+
+![](strong_c.gif){fig-align="center"}
+
+</p>
+
+------------------------------------------------------------------------
+
+## 2. Pokemon distribution by generation
 
 Now is time to adress some of our questions: How many pokemons there are in each generation? How powerfull are they? We can get some ideas about these topics by looking at the distribution of pokemons.
 
@@ -178,7 +250,7 @@ interest_stats |>
   column_spec(6, color = sp_colors, bold = top_speed)
 ```
 
-From this we can see that the most populated generations are the 1st, 3rd and 5th. Nevertheless, the most powerfull generation considering all four stats (combined attack, combined defense, hp and speed) is the 4th generation. 
+From this we can see that the most populated generations are the 1st, 3rd and 5th. Nevertheless, the most powerfull generation considering all four stats (combined attack, combined defense, hp and speed) is the 4th generation.
 
 <!-- Here maybe we han argument to apply a focus on some 3 generations, I leave a not entierly functional code chunk that focused on generations 1, 3 and 5 -->
 
@@ -202,13 +274,15 @@ interest_stats = poke_focus |>
 )
 ```
 
-# What can we say about types
+## 3. What can we say about types
 
 Pokemons come on a wide variety of types. Does it matter to pick a pokemon of a certain type? Are some types more common than others? Are some types more powerful than others? These are very important questions as we know that advantages and weaknesses of types are a key element of the pokemon world. For example, water type pokemons are strong against fire type pokemons but weak against electric type pokemons. In consequence, if we want to catch them all we need to know which types are more common and which types are more powerful.
 
-<!-- <p style="max-width: 35%; align="center">
+```{=html}
+<!--- <p align="center">
 ![](types_pro_cons.png)
-</p> -->
+</p> --->
+```
 
 ```{r}
 #| label: tbl-type_distribution
@@ -225,11 +299,13 @@ pokemon_df |>
                 full_width = F, position = "center")
 ```
 
-## Type proportion on our sample
+# Vizualizations
 
-From table @tbl-type_distribution we can see that the most common types are water, normal and Grass. However, these types are not equally distributed across generations. For example, the water type is more common in the 1st generation than in the 4th generation and Normal type is the rarest main type on the 6th generation. 
+## 1. Type proportion on our sample
 
-The analysis can be enriched if we consider the secondary type of pokemons. Considerin the 18 main types and the 19 secondary types (including "None") there are 342 possible combinations we can create a heatmap to visualize the proportion of pokemons by type 1 and type 2 across the total universe of registered pokemons. This will allow us to see which combinations of types are more common and which are more rare.
+From table @tbl-type_distribution we can see that the most common types are water, normal and Grass. However, these types are not equally distributed across generations. For example, the water type is more common in the 1st generation than in the 4th generation and Normal type is the rarest main type on the 6th generation.
+
+The analysis can be enriched if we consider the secondary type of pokemons. Considering the 18 main types and the 19 secondary types (including "None") there are 342 possible combinations we can create a heatmap to visualize the proportion of pokemons by type 1 and type 2 across the total universe of registered pokemons. This will allow us to see which combinations of types are more common and which are more rare.
 
 ```{r}
 #| label: type-heatmap
@@ -265,39 +341,151 @@ ggplot(poke_type, aes(x = type_2, y = type_1, fill = norm_prop)) +
 
 Assuming that each pokemon species distributed homogeneously across the world, meaning that for example catching a Blastoise is as likely as catching a Squirtle (strong assumption), we could say that the most abuntant pokemons belong to the Water-None combination. Outside the None secondary type, the most common combinations are Normal-Flying (like Pidgey), Grass-Poison (like Bulbasaur) and Bug-Flying (like Butterfree). On the other hand, there are 42 combinations that have only one pokemon species, like the Ghost-Fairy, Fire-Dark, or Dragon-Electric.
 
-## Distribution of stats by type
+## 2. Single vs Dual-type stat distributions
 
-Fancy improvable bar/line plot of the proportion.
+```{r ggplot-viz-1, fig.width=13, fig.height=6}
+# Order types by median total stats (dual-type)
+type_order <- df |>
+  filter(is_dual_type) |>
+  group_by(type_1) |>
+  summarise(med = median(total_stats), .groups = "drop") |>
+  arrange(desc(med)) |>
+  pull(type_1)
 
-We can also analyze the distribution of stats by type to see which types are more powerful. We can see that the most powerful types are....
+df |>
+  mutate(
+    type_1       = factor(type_1, levels = type_order),
+    typing_label = if_else(is_dual_type, "Dual-type", "Single-type")
+  ) |>
+  ggplot(aes(x = type_1, y = total_stats, fill = typing_label)) +
+  geom_violin(
+    position = position_dodge(width = 0.85),
+    alpha = 0.65, colour = NA, scale = "width"
+  ) +
+  stat_summary(
+    aes(group = typing_label),
+    fun = median, geom = "point", shape = 21,
+    colour = "white", fill = "white", size = 1.5,
+    position = position_dodge(width = 0.85)
+  ) +
+  scale_fill_manual(
+    values = c("Single-type" = "#4FC3F7", "Dual-type" = "#FF6B35")
+  ) +
+  scale_y_continuous(breaks = seq(100, 800, 100)) +
+  labs(
+    title    = "Total Base Stats by Primary Type — Single vs Dual-typing",
+    subtitle = "Types ordered by dual-type median. White dots = median.",
+    x = NULL, y = "Total Base Stats", fill = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    plot.background  = element_rect(fill = "#0D0D1A", colour = NA),
+    panel.background = element_rect(fill = "#0D0D1A", colour = NA),
+    panel.grid.major.y = element_line(colour = "#1E1E3A"),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text   = element_text(colour = "#9E9EA0"),
+    axis.text.x = element_text(angle = 35, hjust = 1, face = "bold"),
+    axis.title  = element_text(colour = "#C0C0D0"),
+    plot.title    = element_text(colour = "white", face = "bold", size = 14),
+    plot.subtitle = element_text(colour = "#7B7B9E", size = 10),
+    legend.background = element_rect(fill = "#13132A", colour = NA),
+    legend.text  = element_text(colour = "white"),
+    legend.position = "top"
+  )
+```
+
+**Reading the chart:** Nearly every type shows the orange (dual-type) violin sitting higher than the blue (single-type) one. Dragon dual-types are especially concentrated at the top; Normal single-types show the widest spread due to a large pool of filler Pokémon.
+
+------------------------------------------------------------------------
+
+## 3. Distribution of stats by type
+
+We had done a visualization on the distribituion of stats w.r.t the generation but we did not see any changes that made sense as the generation increased.
+
+So we try to see the different stats of different types of pokemons and we can look at the graph and find out the Strongest , Weakest , Slowest or Fastest types of pokemons.
 
 ```{r}
 #| label: type-stats
 
 #new interest stats by type
-interest_stats_type = pokemon_df |> 
-  group_by(type_1) |> 
-  summarise(n = n(),
-            avg_hp = mean(hp, na.rm = TRUE),
-            avg_attack = mean(comb_attack, na.rm = TRUE),
-            avg_defense = mean(comb_defense, na.rm = TRUE),
-            avg_speed = mean(speed, na.rm = TRUE)
-)
+# 1. Aggregate data by Type only
+type_summary <- df %>%
+  group_by(type_1) %>%
+  summarise(
+    # Calculate the means of the sums directly
+    attack_total  = mean(attack + special_attack, na.rm = TRUE),
+    defense_total = mean(defense + special_defense, na.rm = TRUE),
+    speed         = mean(speed, na.rm = TRUE),
+    hp            = mean(hp, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(attack_total)) %>%
+  mutate(type_1 = factor(type_1, levels = type_1))
 
-# apply focus on the types that have more than 20 pokemons
- finterest_stats = interest_stats_type |> 
-  filter(n > 20) |> 
-   pivot_longer(cols = -type_1, names_to = "stat", values_to = "value")
+# 2. Pivot (Note: Ensure the names match your new columns)
+type_long <- type_summary %>%
+  pivot_longer(
+    cols = c(attack_total, defense_total),
+    names_to = "stat_name",
+    values_to = "stat_value"
+  )
 
-#grouped bar graph for stats by type
-ggplot(data=finterest_stats, aes(x=type_1, y=value, fill=stat)) +
-geom_bar(stat="identity", position=position_dodge())
+# 3. Plot
+ggplot() +
+  geom_col(
+    data = type_long,
+    aes(x = type_1, y = stat_value, fill = stat_name),
+    position = position_dodge(width = 0.7), alpha = 0.8
+  ) +
+  # Dashed line for Speed
+  geom_line(
+    data = type_summary,
+    aes(x = type_1, y = speed, group = 1, color = "Avg Speed"),
+    linewidth = 1.2, linetype = "dashed" 
+  ) +
+  # Solid line for HP
+  geom_line(
+    data = type_summary,
+    aes(x = type_1, y = hp, group = 1, color = "Avg HP"),
+    linewidth = 1.2
+  ) +
+  geom_point(data = type_summary, aes(x = type_1, y = speed, color = "Avg Speed"), size = 3, shape = 16) +
+  geom_point(data = type_summary, aes(x = type_1, y = hp, color = "Avg HP"), size = 3, shape = 15) +
+  scale_fill_manual(
+    values = c("attack_total" = "#EF5350", "defense_total" = "#42A5F5"), # Updated names
+    labels = c("Total Attack", "Total Defense"), 
+    name = "Base Stats"
+  ) +
+  scale_color_manual(
+    values = c("Avg Speed" = "#FFEE58", "Avg HP" = "#66BB6A"),
+    name = "Trends"
+  ) +
+  theme_dark() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  labs(
+    title = "Average Stats by Primary Type",
+    x = "Primary Type",
+    y = "Average Value"
+  )
 
 ```
 
-# Conclusion 
+<p align="center">
 
-very fancy analysis an all but we still beting on Pikachu.
+![The strongest pokemon according to POKEDEX](defence.png){fig-align="center" width="291"}
+
+<p>
+
+# Conclusion
+
+After exploring the Pokémon universe across types, generations, and stat distributions, we can finally offer some battle-tested advice to any 10-year-old setting out on their journey.
+
+**Dual-type Pokémon are worth the extra effort.** 
+
+**Generation matters — but not in the way you might expect.** While generations 1, 3, and 5 offer the largest variety of species to catch, it is generation 4 that consistently produces the most powerful Pokémon across all key stats (HP, attack, defense, and speed). A detour through the Sinnoh region is well worth it.
+
+**The bottom line:** Prioritise dual-type Pokémon, pay attention to generation 4, and do not underestimate type synergy. And after all of this very fancy analysis — we are still betting on Pikachu. ⚡
 
 ```{r}
 #| label: total-clean

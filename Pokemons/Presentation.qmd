@@ -1,0 +1,496 @@
+---
+title: "Who's that Pokémon?"
+subtitle: "A research on the most competitive Pokémon // A.Y. 2025-2026"
+author: 
+  - Maria Briones
+  - Riccardo Dondi
+  - Sayantan Mandal
+format: 
+  revealjs :
+    embed-resources: true
+    width: 1200
+    height: 1000
+    margin: 0.04
+    min-scale: 0.2
+    max-scale: 2.0
+theme: solarized
+transition: slide
+incremental: true
+scrollable: true
+---
+
+## Our mission: catch them all!
+
+<p align="center">
+
+Our main goal is to provide some insights on the Pokémon world to help parents to advice their children on how to catch them all.
+
+![](images/727px-Pokédex_Sinnoh_Pt.webp){fig-align="center" width="50%"}
+
+The POKEDEX of Sinnoh region
+
+## The data
+
+<p align="center">
+
+![](poke_f.gif){fig-align="center" width="250"}
+
+</p>
+
+TOO MUCH DATA AT BEGINNING
+
+-   We will be using the [Pokémon](https://github.com/rfordatascience/tidytuesday/blob/main/data/2025/2025-04-01/readme.md) dataset, which contains information about 949 pokemons on 22 variables.
+
+```{r}
+#| label: set-up
+
+#load pacman library to load all the libraries and install if needed
+library(pacman)
+
+# Load libraries
+p_load(tidyverse, #for data manipulation
+        ggplot2, #for plotting
+        tidytuesdayR, #to load the data
+        forcats, #for factor manipulation
+        farver, #for color manipulation
+        knitr, #for appealing tables
+        kableExtra, #for appealing tables
+        skimr, #for data exploration
+        viridisLite #for color palette
+        )
+
+# if we wanted to set a different working directory
+# mainwd <- "C:/Users/marub/Desktop/DataSci for Management/Statistics with R/Data Visualization" 
+```
+
+```{r}
+#| label: data-import
+
+# import data pokemon from tidytuesdayR
+pokemon_df <- tt_load(2025, week = 13)$pokemon_df
+```
+
+-   DATA CLEANING : We removed Null values from generation
+
+## Variables {.scrollable}
+
+```{r}
+#| label: data-cleaning
+
+# drop columns that we don't need and which have many NAs
+pokemon_df <- pokemon_df |>
+  select(-c(color_2, color_f, egg_group_2, species_id, url_icon, url_image))
+```
+
+-   **id** and **pokemon**: the id (num) and name (chr) of the Pokémon.
+-   **height**: the height of the Pokémon in meters (num).
+-   **weight**: the weight of the Pokémon in kilograms (num).
+-   **base_experience**: the base experience of the Pokémon when catched (num).
+-   **type_1**: the primary type of the Pokémon (chr).
+-   **type_2**: the secondary type of the Pokémon (if it has one) (chr).
+-   **hp**: the health points of the Pokémon (num).
+-   **attack**: the attack points of the Pokémon (num).
+-   **defense**: the defense points of the Pokémon (num).
+-   **special_attack**: the special attack points of the Pokémon (num).
+-   **special_defense**: the special defense points of the Pokémon (num).
+-   **speed**: the speed points of the Pokémon (num).
+-   **generation_id**: the generation on wich the Pokémon was introduced (num).
+
+## The insights
+
+We worked mainly on 3 insights:
+
+![](pokemon-confused.gif){fig-align="center"}
+
+-   **Dual-type vs Single-type** (table)
+-   **Distribution by generation** (table)
+-   **Number of Pokemons by type and generation** (table)
+
+## Double typing
+
+![](pokemon-charjabug.gif){fig-align="center"}
+
+-   The first insight is about the typing of the pokemons. Is dual type more performant than single type?
+
+-   To answer this question, we should look at the average power stats of both single and dual type pokemons.
+
+-   ***`power_stats = hp + attack + defense + special_attack + special_defense + speed`***
+
+------------------------------------------------------------------------
+
+```{r}
+#| label: data-cleaning-2
+
+# drop pokemons with missing generation_id
+pokemon_df = pokemon_df |> 
+  filter(!is.na(generation_id))
+
+#manage NAs in type 2
+pokemon_df = pokemon_df |> 
+  mutate(pokemon = str_to_title(pokemon), #gives some format to Pokémon names.
+         type_2 = ifelse(is.na(type_2), "none", type_2) |> str_to_title(),
+         type_1 = str_to_title(type_1))
+
+#data for dual analysis
+df <- pokemon_df |>
+  mutate(
+    type_2       = na_if(type_2, "NA"),
+    is_dual_type = !is.na(type_2),
+    power_stats  = hp + attack + defense + special_attack + special_defense + speed
+  )
+
+dual_summary <- df |>
+  group_by(is_dual_type) |>
+  summarise(
+    n            = n(),
+    mean_power   = round(mean(power_stats), 1),
+    median_power = round(median(power_stats), 1),
+    sd_power     = round(sd(power_stats), 1),
+    .groups = "drop"
+  )
+
+dual_summary |>
+  kable(
+    caption = "Summary Statistics by Dual-Type Status",
+    col.names = c("Dual Type?", "Count", "Mean Power", "Median Power", "Power SD")
+  ) |>
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE)
+
+```
+
+```{r dplyr-insight-1}
+type_dual <- df |>
+  group_by(type_1, is_dual_type) |>
+  summarise(
+    n          = n(),
+    mean_power = round(mean(power_stats), 1),
+    .groups    = "drop"
+  ) |>
+  filter(n >= 5) |>
+  arrange(desc(mean_power))
+
+
+type_dual |> slice_head(n = 10) |>
+  kable(
+    caption = "Mean Power Stats by Primary Type and Dual-Type Status",
+    col.names = c("Primary Type", "Dual Type?", "Count", "Mean Power")
+  ) |>
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE)
+```
+
+------------------------------------------------------------------------
+
+### Outcome
+
+Dual-type Pokémon average **`r dual_summary |> filter(is_dual_type) |> pull(mean_power)`** power stats vs **`r dual_summary |> filter(!is_dual_type) |> pull(mean_power)`** for single-types — a \~37-point (9.16%) gap. Dragon dual-types lead all groups at 568 average.
+
+![](Dragon%20pokemons.webp){fig-align="center" width="50%"}
+
+## Distribution by generation
+
+-   Let's continue with the distribution of pokemons by generation. We want to understand:
+
+    -   Which generation has the most pokemons?
+    -   Which generation has the most powerful pokemons?
+
+-   A table should be sufficient to answer these questions.
+
+------------------------------------------------------------------------
+
+```{r}
+#| label: pokemon-distribution
+
+# to a better analysis we create to combined variables
+pokemon_df = pokemon_df |> 
+  mutate(comb_attack = attack + special_attack,
+         comb_defense = defense + special_defense)
+         
+#summarise pokemon distribution by generation and main stats
+interest_stats = pokemon_df |> 
+  group_by(generation_id) |> 
+  summarise(n = n(),
+            avg_hp = mean(hp, na.rm = TRUE),
+            avg_attack = mean(comb_attack, na.rm = TRUE),
+            avg_defense = mean(comb_defense, na.rm = TRUE),
+            avg_speed = mean(speed, na.rm = TRUE)
+)
+```
+
+```{r}
+#| label: tbl-poke_distribution
+#| echo: false
+#| tbl-cap: "Pokemon stats by generation"
+
+# Identify generations with the highest number of pokemons
+top_gen <- rank(-interest_stats$n) <= 3
+
+#identify the top generation on each stat
+top_hp <- rank(-interest_stats$avg_hp) <= 3
+top_attack <- rank(-interest_stats$avg_attack) <= 3
+top_defense <- rank(-interest_stats$avg_defense) <= 3
+top_speed <- rank(-interest_stats$avg_speed) <= 3
+
+
+turbo=turbo(n=3, begin= 0.8, end=0.99, direction = 1) #3 color from turbo palette
+
+# Create background color vector (only for top 3)
+gen_colors <- ifelse(top_gen, spec_color(interest_stats$n, end = 0.5), "transparent") #default viridis
+hp_colors <- ifelse(top_hp, spec_color(interest_stats$avg_hp, palette=turbo), "black")
+at_colors <- ifelse(top_attack, spec_color(interest_stats$avg_attack, palette=turbo),"black")
+def_colors <- ifelse(top_defense, spec_color(interest_stats$avg_defense, palette=turbo),"black")
+sp_colors <- ifelse(top_speed, spec_color(interest_stats$avg_speed, palette=turbo),"black")
+
+
+interest_stats |>
+  kable(digits = 2) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+                full_width = F, position = "center") |> #some styling options for the table
+  column_spec(2, background = gen_colors) |> #backwround color for 2 column (number of pokemons)
+  column_spec(3, color = hp_colors, bold = top_hp) |> #color and bold for hp column
+  column_spec(4, color = at_colors, bold = top_attack) |> 
+  column_spec(5, color = def_colors, bold = top_defense) |> 
+  column_spec(6, color = sp_colors, bold = top_speed)
+```
+
+------------------------------------------------------------------------
+
+### Outcome
+
+-   The most populated generations are **the 1st, 3rd and 5th**, highlighted in blue in the table.
+
+-   Nevertheless, the most powerfull generation considering all four stats (combined attack, combined defense, hp and speed) is **the 4th generation**.
+
+![The starters of 4th gen](Starters_vectorial-removebg-preview.png){fig-align="center"}
+
+## Vizualizations :
+
+![](poke-graph.png){fig-align="center" width="254"}
+
+THIS KIND OF VIZUALIZATION IS NOT RECOMMENDED
+
+-   **Type proportion on the 7 generations** (heatmap)
+-   **Single vs Dual-type stat distributions** (violin - plot)
+-   **Distribution of stats by type** (bar + line plot)
+
+## Type proportion
+
+-   Considering the 18 main types and the 19 secondary types (including “None”), there are **342 possible combinations** of types.
+
+-   Which combinations of types are more common and which are more rare?
+
+-   To better understand the proportion of types we can use a heatmap: the more intense the color, the more pokemons of that type combination there are.
+
+------------------------------------------------------------------------
+
+```{r}
+#| label: type-heatmap
+
+# count of pokemon by type 1 and type 2
+poke_type <- pokemon_df|> 
+  group_by(type_1, type_2) |> 
+  summarise(n = n(), .groups = "drop") |>
+  complete(type_1, type_2, fill = list(n = 0)) |>
+  ungroup() |> 
+  mutate(prop = n * 100 / sum(n), 
+         norm_prop = case_when (prop==0 ~ -2.1,
+                                TRUE ~ log(prop))
+        )
+
+poke_type <- poke_type |>
+  mutate(type_2 = fct_relevel(type_2, "None")) #we make it a factor so "None" appears first
+
+#graph 
+ggplot(poke_type, aes(x = type_2, y = type_1, fill = norm_prop)) +
+  geom_tile(color = "lightgrey") +
+  scale_fill_gradient(low = "white", high = "#B22222") +
+  labs(
+    title = "Normalized proportion of pokemons by types",
+    x = "Secondary Type",
+    y = "Main Type",
+    fill = "Norm. Prop.",
+    caption = "Normalization is performed as ln(proportion) to better visualize types with low proportions."
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+------------------------------------------------------------------------
+
+### Outcome
+
+-   Assuming that the species are homogeneously distributed across gens, for Single-type pokemons the most abuntant pokemons belong to the **Water-None** combination.
+
+-   For Double-type, the most common combinations are:
+
+    **Normal-Flying** (like Pidgey), **Grass-Poison** (like Bulbasaur), **Bug-Flying** (like Butterfree).
+
+![](squirtle-pokemon.gif){fig-align="center" width="230"}
+
+SQUIRTLE GANG
+
+## Single vs Dual type stats distribution
+
+-   We did a violin plot to compare the distribution of power stats between single and dual type pokemons. The plot shows that dual type pokemons have a higher median and a wider distribution of power stats compared to single type pokemons.
+
+-   ***`power stats  = hp + attack + defense + special attack + special defense + speed`***
+
+------------------------------------------------------------------------
+
+```{r}
+#| label: violin-plot
+#| echo: false
+#| fig-width : 12
+#| fig-height: 6
+
+# Order types by median power stats (dual-type)
+type_order <- df |>
+  filter(is_dual_type) |>
+  group_by(type_1) |>
+  summarise(med = median(power_stats), .groups = "drop") |>
+  arrange(desc(med)) |>
+  pull(type_1)
+
+df |>
+  mutate(
+    type_1       = factor(type_1, levels = type_order),
+    typing_label = if_else(is_dual_type, "Dual-type", "Single-type")
+  ) |>
+  ggplot(aes(x = type_1, y = power_stats, fill = typing_label)) +
+  geom_violin(
+    position = position_dodge(width = 0.85),
+    alpha = 0.65, colour = NA, scale = "width"
+  ) +
+  stat_summary(
+    aes(group = typing_label),
+    fun = median, geom = "point", shape = 21,
+    colour = "white", fill = "white", size = 1.5,
+    position = position_dodge(width = 0.85)
+  ) +
+  scale_fill_manual(
+    values = c("Single-type" = "#4FC3F7", "Dual-type" = "#FF6B35")
+  ) +
+  scale_y_continuous(breaks = seq(100, 800, 100)) +
+  labs(
+    title    = "Power Base Stats by Primary Type — Single vs Dual-typing",
+    subtitle = "Types ordered by dual-type median. White dots = median.",
+    x = NULL, y = "Power Base Stats", fill = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    plot.background  = element_rect(fill = "#0D0D1A", colour = NA),
+    panel.background = element_rect(fill = "#0D0D1A", colour = NA),
+    panel.grid.major.y = element_line(colour = "#1E1E3A"),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text   = element_text(colour = "#9E9EA0"),
+    axis.text.x = element_text(angle = 35, hjust = 1, face = "bold"),
+    axis.title  = element_text(colour = "#C0C0D0"),
+    plot.title    = element_text(colour = "white", face = "bold", size = 14),
+    plot.subtitle = element_text(colour = "#7B7B9E", size = 10),
+    legend.background = element_rect(fill = "#13132A", colour = NA),
+    legend.text  = element_text(colour = "white"),
+    legend.position = "top"
+  )
+```
+
+![](bug.gif){fig-align="center" width="471" height="279"}
+
+Some POKEMONS may EAT you CAREFUL !!
+
+## Distribution of stats by type
+
+-   To have a even more clear view on the Pokémon world, we analyzed also the distribution of stats grouped by type to see which are the most or less effective ones.
+
+-   We used a bar-plot for the total attack and defense stats overlaped by a line plot for the health-points and speed.
+
+------------------------------------------------------------------------
+
+```{r}
+#| label: type-stats
+#| fig-width : 12
+#| fig-height: 8
+
+#new interest stats by type
+# 1. Aggregate data by Type only
+type_summary <- df |> 
+  group_by(type_1) |> 
+  summarise(
+    # Calculate the means of the sums directly
+    attack_total  = mean(attack + special_attack, na.rm = TRUE),
+    defense_total = mean(defense + special_defense, na.rm = TRUE),
+    speed         = mean(speed, na.rm = TRUE),
+    hp            = mean(hp, na.rm = TRUE),
+    .groups = "drop"
+  ) |> 
+  arrange(desc(attack_total)) |> 
+  mutate(type_1 = factor(type_1, levels = type_1))
+
+# 2. Pivot (Note: Ensure the names match your new columns)
+type_long <- type_summary |> 
+  pivot_longer(
+    cols = c(attack_total, defense_total),
+    names_to = "stat_name",
+    values_to = "stat_value"
+  )
+
+# 3. Plot
+ggplot() +
+  geom_col(
+    data = type_long,
+    aes(x = type_1, y = stat_value, fill = stat_name),
+    position = position_dodge(width = 0.7), alpha = 0.8
+  ) +
+  # Dashed line for Speed
+  geom_line(
+    data = type_summary,
+    aes(x = type_1, y = speed, group = 1, color = "Avg Speed"),
+    linewidth = 1.2, linetype = "dashed" 
+  ) +
+  # Solid line for HP
+  geom_line(
+    data = type_summary,
+    aes(x = type_1, y = hp, group = 1, color = "Avg HP"),
+    linewidth = 1.2
+  ) +
+  geom_point(data = type_summary, aes(x = type_1, y = speed, color = "Avg Speed"), size = 3, shape = 16) +
+  geom_point(data = type_summary, aes(x = type_1, y = hp, color = "Avg HP"), size = 3, shape = 15) +
+  scale_fill_manual(
+    values = c("attack_total" = "#EF5350", "defense_total" = "#42A5F5"), # Updated names
+    labels = c("Total Attack", "Total Defense"), 
+    name = "Base Stats"
+  ) +
+  scale_color_manual(
+    values = c("Avg Speed" = "#FFEE58", "Avg HP" = "#66BB6A"),
+    name = "Trends"
+  ) +
+  theme_dark() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  labs(
+    title = "Average Stats by Primary Type",
+    x = "Primary Type",
+    y = "Average Value"
+  )
+
+```
+
+## Conclusion
+
+Some battle-tested advice:
+
+-   Dual-type Pokémon are worth the extra effort (Dragon-dual-types are the best ones);
+-   The 4th generation is a goldmine of powerful Pokemons, so consider focusing on the Sinnoh region;
+-   Always keep an eye on the types synergy and on their rareness.
+
+## Who's that Pokémon?
+
+The most competitive Pokémon is **Garchomp**: a Dragon-Ground dual-type from the 4th generation with a stat power of 608 points, 130 attack and 95 defense, but...
+
+![](garchomp.png){fig-align="center"}
+
+------------------------------------------------------------------------
+
+At the end, our choice was, is and will always be **Pikachu**!
+
+![The best pokemon ever](Pikachu.png){fig-align="center" width="45%"}

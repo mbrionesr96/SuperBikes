@@ -25,7 +25,7 @@ Leading CRM platform offering cloud-based applications (Sales, Service, Marketin
 - Enable autonomous AI agents—making AI a core layer across all Salesforce products.
 :::
 
-## Our last years
+## 
 
 ![We've been moving from an agressive Buy strategy → to a Build + Partner strategy. Our focus moved from acquiring platforms to owning the AI orchestration layer](/SalesforceTL.png){width="85%" height="85%" fig-align="center"}
 
@@ -58,9 +58,9 @@ This startegy allowed us to **remain coherent with our core bussiness** activiti
 
 - Made them *AI-capable* (more efficient, more aware, more understanding) rather than replacing them.
 
-## What's next'? 
+## What's next? 
 
-As we have recently secured our strategic partnership with OpenAI, and with the technology gaps been fully adressed, Sales should move forward to:
+As we have recently secured our strategic partnership with OpenAI, and with the technology gaps been fully adressed, Salesforce should move forward to:
 
 - **Build** new products and integrating them into our platform to deliver aggregate value. This is, reinforce our product ecosystem and make it more difficult for competitors to replicate our offering.
 - This implies a strong **reinforcement to our R&D Units and our Corporate Incubator**.
